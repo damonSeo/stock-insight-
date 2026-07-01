@@ -18,7 +18,7 @@ const sourceColor: Record<string, string> = {
   MarketWatch: "bg-emerald-900/50 text-emerald-300",
 };
 
-function NewsCard({ item, flag }: { item: NewsItem; flag: string }) {
+function NewsCard({ item, flag, ai }: { item: NewsItem; flag: string; ai: boolean }) {
   return (
     <a
       href={item.link}
@@ -53,9 +53,16 @@ function NewsCard({ item, flag }: { item: NewsItem; flag: string }) {
         </h3>
 
         {item.summary && (
-          <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400 line-clamp-5">
-            {item.summary}
-          </p>
+          <div className="mt-2 flex-1">
+            {ai && (
+              <span className="mb-1 inline-block rounded bg-purple-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-300">
+                ✦ AI 요약
+              </span>
+            )}
+            <p className="text-sm leading-relaxed text-slate-400 line-clamp-5">
+              {item.summary}
+            </p>
+          </div>
         )}
 
         <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-400">
@@ -66,7 +73,15 @@ function NewsCard({ item, flag }: { item: NewsItem; flag: string }) {
   );
 }
 
-export default function NewsClient({ kr, us }: { kr: NewsItem[]; us: NewsItem[] }) {
+export default function NewsClient({
+  kr,
+  us,
+  aiEnabled = false,
+}: {
+  kr: NewsItem[];
+  us: NewsItem[];
+  aiEnabled?: boolean;
+}) {
   const [tab, setTab] = useState<"KR" | "US">("KR");
   const items = tab === "KR" ? kr : us;
   const flag = tab === "KR" ? "🇰🇷" : "🇺🇸";
@@ -94,7 +109,7 @@ export default function NewsClient({ kr, us }: { kr: NewsItem[]; us: NewsItem[] 
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <NewsCard key={item.link} item={item} flag={flag} />
+            <NewsCard key={item.link} item={item} flag={flag} ai={aiEnabled} />
           ))}
         </div>
       )}

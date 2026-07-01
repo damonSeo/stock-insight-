@@ -59,7 +59,13 @@ interface YahooChartResult {
   };
   timestamp?: number[];
   indicators?: {
-    quote?: { close?: (number | null)[]; volume?: (number | null)[] }[];
+    quote?: {
+      open?: (number | null)[];
+      high?: (number | null)[];
+      low?: (number | null)[];
+      close?: (number | null)[];
+      volume?: (number | null)[];
+    }[];
   };
 }
 
@@ -142,6 +148,99 @@ export async function fetchSeries(symbol: string): Promise<SeriesPoint[]> {
  */
 export function krSymbol(code: string, board: "KS" | "KQ" = "KS"): string {
   return `${code}.${board}`;
+}
+
+// ---------------------------------------------------------------------------
+// 종목 상세 (캔들차트 + 지표) & 검색
+// ---------------------------------------------------------------------------
+
+export interface Candle {
+  time: string; // YYYY-MM-DD
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** OHLCV 캔들 시계열 (캔들차트용) */
+export async function fetchCandles(symbol: string, range = "6mo"): Promise<Candle[]> {
+  const data = await fetchChartRaw(symbol, range, "1d");
+  const ts = data?.timestamp ?? [];
+  const q = data?.indicators?.quote?.[0];
+  const candles: Candle[] = [];
+  for (let i = 0; i < ts.length; i++) {
+    const o = q?.open?.[i];
+    const h = q?.high?.[i];
+    const l = q?.low?.[i];
+    const c = q?.close?.[i];
+    if (o == null || h == null || l == null || c == null) continue;
+    candles.push({
+      time: new Date(ts[i] * 1000).toISOString().slice(0, 10),
+      open: o,
+      high: h,
+      low: l,
+      close: c,
+      volume: q?.volume?.[i] ?? 0,
+    });
+  }
+  return candles;
+}
+
+/** 종목 메타(이름/통화/시장) — 상세 페이지 헤더용 */
+export async function fetchQuoteMeta(symbol: string): Promise<{
+  price: number;
+  change: number;
+  changePct: number;
+  currency: string;
+} | null> {
+  const data = await fetchChartRaw(symbol, "1mo", "1d");
+  if (!data) return null;
+  const q = toQuote(symbol, data);
+  const currency = (data as unknown as { meta?: { currency?: string } })?.meta?.currency ?? "USD";
+  return { price: q.price, change: q.change, changePct: q.changePct, currency };
+}
+
+export interface SearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+}
+
+interface YahooSearchQuote {
+  symbol?: string;
+  shortname?: string;
+  longname?: string;
+  exchDisp?: string;
+  quoteType?: string;
+}
+
+/** 종목 검색 (Yahoo search) — 관심종목 추가용 */
+export async function searchSymbols(query: string): Promise<SearchResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=8&newsCount=0`;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const quotes: YahooSearchQuote[] = json?.quotes ?? [];
+    return quotes
+      .filter((x) => x.symbol && (x.shortname || x.longname))
+      .filter((x) => ["EQUITY", "ETF", "INDEX", "CURRENCY"].includes(x.quoteType ?? ""))
+      .map((x) => ({
+        symbol: x.symbol as string,
+        name: (x.shortname || x.longname) as string,
+        exchange: x.exchDisp ?? "",
+        type: x.quoteType ?? "",
+      }));
+  } catch {
+    return [];
+  }
 }
 
 // ---------------------------------------------------------------------------

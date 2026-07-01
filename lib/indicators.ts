@@ -67,6 +67,56 @@ export function volumeRatio(volumes: number[], period = 20): number {
   return Math.round((last / avg) * 10) / 10;
 }
 
+// ---- 지표 시계열 (상세 페이지 미니차트용) ----
+
+/** 각 시점의 RSI(14) 값 (워밍업 구간은 null) */
+export function rsiSeries(closes: number[], period = 14): (number | null)[] {
+  const out: (number | null)[] = closes.map(() => null);
+  for (let i = period; i < closes.length; i++) {
+    let gains = 0;
+    let losses = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const diff = closes[j] - closes[j - 1];
+      if (diff >= 0) gains += diff;
+      else losses -= diff;
+    }
+    const avgGain = gains / period;
+    const avgLoss = losses / period;
+    out[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+  }
+  return out;
+}
+
+function emaSeries(values: number[], period: number): number[] {
+  const k = 2 / (period + 1);
+  const out: number[] = [];
+  let prev = values.length ? values[0] : 0;
+  values.forEach((v, i) => {
+    prev = i === 0 ? v : v * k + prev * (1 - k);
+    out.push(prev);
+  });
+  return out;
+}
+
+export interface MacdPoint {
+  macd: number;
+  signal: number;
+  hist: number;
+}
+
+/** MACD(12,26,9) 시계열 */
+export function macdSeries(closes: number[]): MacdPoint[] {
+  const ema12 = emaSeries(closes, 12);
+  const ema26 = emaSeries(closes, 26);
+  const line = closes.map((_, i) => ema12[i] - ema26[i]);
+  const signal = emaSeries(line, 9);
+  return closes.map((_, i) => ({
+    macd: line[i],
+    signal: signal[i],
+    hist: line[i] - signal[i],
+  }));
+}
+
 export type Signal = "강력매수" | "매수" | "관망" | "매도" | "강력매도";
 
 export function deriveSignal(

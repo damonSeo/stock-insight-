@@ -1,9 +1,9 @@
 import { futureValueStocks } from "@/lib/mockData";
-import { fetchIndices, fetchSeries, fetchAllMovers } from "@/lib/yahoo";
+import { fetchIndices, fetchAllMovers } from "@/lib/yahoo";
 import IndexCard from "@/components/IndexCard";
 import DiagnosisCard from "@/components/DiagnosisCard";
 import FutureValueCard from "@/components/FutureValueCard";
-import MiniChart from "@/components/MiniChart";
+import WatchlistSection from "@/components/WatchlistSection";
 import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
 
@@ -13,10 +13,8 @@ export default async function Dashboard() {
   });
 
   // 실시간 데이터 (Yahoo Finance, 60초 캐시)
-  const [marketIndices, kospiSeries, spSeries, movers] = await Promise.all([
+  const [marketIndices, movers] = await Promise.all([
     fetchIndices(),
-    fetchSeries("^KS11"),
-    fetchSeries("^GSPC"),
     fetchAllMovers(5),
   ]);
   const topGainers = movers.gainers.slice(0, 5);
@@ -44,16 +42,7 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-700/50 bg-slate-900 p-4">
-          <p className="mb-1 text-sm font-semibold text-slate-300">🇰🇷 KOSPI 30일 추이</p>
-          <MiniChart data={kospiSeries} color="#10b981" />
-        </div>
-        <div className="rounded-xl border border-slate-700/50 bg-slate-900 p-4">
-          <p className="mb-1 text-sm font-semibold text-slate-300">🇺🇸 S&P 500 30일 추이</p>
-          <MiniChart data={spSeries} color="#3b82f6" />
-        </div>
-      </section>
+      <WatchlistSection />
 
       <section>
         <div className="mb-4 flex items-center justify-between">
