@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, BarChart2, Star, Activity } from "lucide-react";
+import { TrendingUp, BarChart2, Star, Activity, Newspaper } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "대시보드", icon: Activity },
   { href: "/movers", label: "급등/급락 분석", icon: TrendingUp },
   { href: "/future", label: "미래 가치 투자", icon: Star },
+  { href: "/news", label: "경제 뉴스", icon: Newspaper },
   { href: "/market", label: "시장 현황", icon: BarChart2 },
 ];
 
