@@ -25,7 +25,7 @@ export default function Navbar() {
             <span className="ml-1 rounded bg-blue-900/60 px-1.5 py-0.5 text-xs text-blue-300">KR·US</span>
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="hidden items-center gap-1 md:flex">
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
