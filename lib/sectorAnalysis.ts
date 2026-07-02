@@ -57,7 +57,7 @@ async function callAiTrends(
             id: { type: "STRING" },
             trend: { type: "STRING" },
             drivers: { type: "ARRAY", items: { type: "STRING" } },
-            outlook: { type: "STRING", enum: ["긍정", "중립", "부정"] },
+            outlook: { type: "STRING" }, // 긍정/중립/부정 (코드에서 검증)
           },
           required: ["id", "trend", "drivers", "outlook"],
         },
@@ -74,7 +74,7 @@ function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v2", day], {
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v3", day], {
     revalidate: 21600,
   })();
 }
@@ -112,15 +112,23 @@ export async function fetchSectorTrends(): Promise<SectorTrend[]> {
   );
   const aiMap = new Map((ai ?? []).map((a) => [a.id, a]));
 
+  const heuristic = (avg: number): "긍정" | "중립" | "부정" =>
+    avg >= 1 ? "긍정" : avg <= -1 ? "부정" : "중립";
+  const validOutlooks = ["긍정", "중립", "부정"];
+
   const result: SectorTrend[] = base.map((b) => {
     const a = aiMap.get(b.sec.id);
+    const outlook =
+      a && validOutlooks.includes(a.outlook)
+        ? (a.outlook as "긍정" | "중립" | "부정")
+        : heuristic(b.avg);
     return {
       id: b.sec.id,
       name: b.sec.name,
       emoji: b.sec.emoji,
       theme: b.sec.theme,
       avgChangePct: b.avg,
-      outlook: a?.outlook ?? (b.avg >= 1 ? "긍정" : b.avg <= -1 ? "부정" : "중립"),
+      outlook,
       trend: a?.trend ?? `${b.sec.theme} 중심의 미래 성장 섹터입니다.`,
       drivers: a?.drivers ?? [],
       ai: Boolean(a),
