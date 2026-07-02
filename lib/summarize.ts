@@ -144,7 +144,8 @@ export async function summarizeNews(
 ): Promise<NewsItem[]> {
   if (!aiSummariesEnabled() || items.length === 0) return items;
   const cacheKey = items.map((i) => i.link).join("|");
-  const cached = unstable_cache(() => summarize(items), ["news-summary", market, cacheKey], {
+  // 버전 접두어 — 모델/프롬프트 변경 시 값만 올리면 기존 캐시 즉시 무효화
+  const cached = unstable_cache(() => summarize(items), ["news-summary-v2", market, cacheKey], {
     revalidate: 1800,
   });
   return cached();
