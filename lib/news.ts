@@ -16,6 +16,7 @@ export interface NewsItem {
   source: string;
   pubDate: string; // ISO
   image?: string;
+  ai?: boolean; // AI가 실제로 요약한 항목이면 true
 }
 
 interface FeedConfig {

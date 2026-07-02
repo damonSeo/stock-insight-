@@ -9,7 +9,7 @@ import type { NewsItem } from "@/lib/news";
  */
 
 const SUMMARIZE_COUNT = 15; // 상위 N개만 AI 요약 (나머지는 리드문 유지)
-const GEMINI_MODEL = "gemini-2.0-flash"; // 무료 티어
+const GEMINI_MODEL = "gemini-2.5-flash"; // 무료 티어 (2.0-flash는 일부 키에서 무료 한도 0)
 const CLAUDE_MODEL = "claude-opus-4-8";
 
 const SYSTEM_PROMPT =
@@ -31,7 +31,7 @@ function applySummaries(items: NewsItem[], summaries: SummaryItem[]): NewsItem[]
   const map = new Map(summaries.map((s) => [s.index, s.summary]));
   return items.map((it, i) => {
     const s = map.get(i);
-    return s ? { ...it, summary: s } : it;
+    return s ? { ...it, summary: s, ai: true } : it;
   });
 }
 
@@ -51,6 +51,7 @@ async function callGemini(items: NewsItem[]): Promise<NewsItem[]> {
         contents: [{ parts: [{ text: buildPrompt(targets) }] }],
         generationConfig: {
           responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 0 }, // 요약엔 thinking 불필요 → 끔(속도/안정성)
           responseSchema: {
             type: "OBJECT",
             properties: {

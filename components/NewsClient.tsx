@@ -18,7 +18,8 @@ const sourceColor: Record<string, string> = {
   MarketWatch: "bg-emerald-900/50 text-emerald-300",
 };
 
-function NewsCard({ item, flag, ai }: { item: NewsItem; flag: string; ai: boolean }) {
+function NewsCard({ item, flag }: { item: NewsItem; flag: string }) {
+  const ai = Boolean(item.ai);
   return (
     <a
       href={item.link}
@@ -73,15 +74,7 @@ function NewsCard({ item, flag, ai }: { item: NewsItem; flag: string; ai: boolea
   );
 }
 
-export default function NewsClient({
-  kr,
-  us,
-  aiEnabled = false,
-}: {
-  kr: NewsItem[];
-  us: NewsItem[];
-  aiEnabled?: boolean;
-}) {
+export default function NewsClient({ kr, us }: { kr: NewsItem[]; us: NewsItem[] }) {
   const [tab, setTab] = useState<"KR" | "US">("KR");
   const items = tab === "KR" ? kr : us;
   const flag = tab === "KR" ? "🇰🇷" : "🇺🇸";
@@ -109,7 +102,7 @@ export default function NewsClient({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <NewsCard key={item.link} item={item} flag={flag} ai={aiEnabled} />
+            <NewsCard key={item.link} item={item} flag={flag} />
           ))}
         </div>
       )}

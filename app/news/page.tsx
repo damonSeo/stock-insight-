@@ -21,7 +21,7 @@ export default async function NewsPage() {
         </p>
       </div>
 
-      <NewsClient kr={kr} us={us} aiEnabled={ai} />
+      <NewsClient kr={kr} us={us} />
     </main>
   );
 }
