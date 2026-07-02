@@ -3,7 +3,9 @@
  * gemini-2.5-flash 사용 (2.0-flash 계열은 일부 무료키에서 429, 1.5-flash는 404 단종).
  */
 
-export const GEMINI_MODEL = "gemini-2.5-flash";
+// flash-lite: 모델별 무료 한도가 별도이고 flash보다 가벼움
+// (이 키에서 gemini-2.5-flash 무료 한도가 하루 20건으로 매우 낮아 lite로 교체)
+export const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 export function geminiEnabled(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);

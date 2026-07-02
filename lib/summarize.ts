@@ -116,18 +116,32 @@ async function summarize(items: NewsItem[]): Promise<NewsItem[]> {
   return items;
 }
 
-/** 시장별 뉴스 AI 요약 (30분 캐시, 키 없으면 원본 반환) */
+// 무료 한도 절약: link→요약 맵을 (시장, 4시간 버킷)으로 캐시.
+// 리스트(제목/링크)는 항상 신선, AI 호출은 하루 시장당 최대 6회.
+const BUCKET_MS = 4 * 60 * 60 * 1000;
+
+async function summarizeToMap(items: NewsItem[]): Promise<Record<string, string>> {
+  const res = await summarize(items);
+  const map: Record<string, string> = {};
+  for (const it of res) if (it.ai) map[it.link] = it.summary;
+  return map;
+}
+
+/** 시장별 뉴스 AI 요약 (버킷 캐시, 키 없으면 원본 반환) */
 export async function summarizeNews(
   items: NewsItem[],
   market: string,
 ): Promise<NewsItem[]> {
   if (!aiSummariesEnabled() || items.length === 0) return items;
-  const cacheKey = items.map((i) => i.link).join("|");
-  // 버전 접두어 — 모델/프롬프트 변경 시 값만 올리면 기존 캐시 즉시 무효화
-  const cached = unstable_cache(() => summarize(items), ["news-summary-v3", market, cacheKey], {
-    revalidate: 1800,
-  });
-  return cached();
+  const bucket = Math.floor(Date.now() / BUCKET_MS);
+  // 버전 접두어(v4) — 모델/프롬프트 변경 시 올려서 캐시 무효화
+  const cached = unstable_cache(
+    () => summarizeToMap(items),
+    ["news-summary-v4", market, String(bucket)],
+    { revalidate: BUCKET_MS / 1000 },
+  );
+  const map = await cached();
+  return items.map((it) => (map[it.link] ? { ...it, summary: map[it.link], ai: true } : it));
 }
 
 export function aiSummariesEnabled(): boolean {

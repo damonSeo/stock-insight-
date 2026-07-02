@@ -74,7 +74,7 @@ function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v1", day], {
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v2", day], {
     revalidate: 21600,
   })();
 }
