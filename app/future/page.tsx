@@ -1,15 +1,20 @@
 import { futureValueStocks } from "@/lib/mockData";
 import { fetchQuotes, krSymbol } from "@/lib/yahoo";
+import { fetchSectorTrends } from "@/lib/sectorAnalysis";
 import FutureClient from "@/components/FutureClient";
+import SectorTrends from "@/components/SectorTrends";
 
 export const revalidate = 60;
 
 export default async function FuturePage() {
-  // 실시간 현재가로 상승 여력 재계산 (목표가·분석 텍스트는 편집 데이터 유지)
+  // 섹터 트렌드(실시세 모멘텀 + AI) & 편집 종목 실시간 현재가
   const symbols = futureValueStocks.map((s) =>
     s.market === "KR" ? krSymbol(s.symbol) : s.symbol,
   );
-  const quotes = await fetchQuotes(symbols);
+  const [sectors, quotes] = await Promise.all([
+    fetchSectorTrends(),
+    fetchQuotes(symbols),
+  ]);
 
   const stocks = futureValueStocks.map((s) => {
     const sym = s.market === "KR" ? krSymbol(s.symbol) : s.symbol;
@@ -19,15 +24,20 @@ export default async function FuturePage() {
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 space-y-10">
       <div>
         <h1 className="text-3xl font-black text-white">미래 가치 투자 분석</h1>
         <p className="mt-1 text-slate-400">
-          섹터·테마별 장기 성장 유망 종목 · 실시간 현재가 기준 상승 여력 · 투자 점수
+          미래 먹거리 핫섹터 트렌드(AI 분석) · 섹터별 장기 성장 유망 종목
         </p>
       </div>
 
-      <FutureClient stocks={stocks} />
+      <SectorTrends sectors={sectors} />
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-bold text-white">📌 종목별 심층 분석</h2>
+        <FutureClient stocks={stocks} />
+      </section>
     </main>
   );
 }

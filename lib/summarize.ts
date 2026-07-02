@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type { NewsItem } from "@/lib/news";
+import { geminiJSON, geminiEnabled } from "@/lib/gemini";
 
 /**
  * 경제 뉴스 AI 요약 — 무료 우선.
@@ -9,7 +10,6 @@ import type { NewsItem } from "@/lib/news";
  */
 
 const SUMMARIZE_COUNT = 24; // 전체 기사 AI 요약 (무료 티어로 충분)
-const GEMINI_MODEL = "gemini-2.5-flash"; // 무료 티어 (2.0-flash는 일부 키에서 무료 한도 0)
 const CLAUDE_MODEL = "claude-opus-4-8";
 
 const SYSTEM_PROMPT =
@@ -37,51 +37,30 @@ function applySummaries(items: NewsItem[], summaries: SummaryItem[]): NewsItem[]
 
 // ---- Google Gemini (무료) ----
 async function callGemini(items: NewsItem[]): Promise<NewsItem[]> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return items;
   const targets = items.slice(0, SUMMARIZE_COUNT);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ parts: [{ text: buildPrompt(targets) }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: 0 }, // 요약엔 thinking 불필요 → 끔(속도/안정성)
-          responseSchema: {
+  const parsed = await geminiJSON<{ summaries: SummaryItem[] }>(
+    SYSTEM_PROMPT,
+    buildPrompt(targets),
+    {
+      type: "OBJECT",
+      properties: {
+        summaries: {
+          type: "ARRAY",
+          items: {
             type: "OBJECT",
             properties: {
-              summaries: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    index: { type: "INTEGER" },
-                    summary: { type: "STRING" },
-                  },
-                  required: ["index", "summary"],
-                },
-              },
+              index: { type: "INTEGER" },
+              summary: { type: "STRING" },
             },
-            required: ["summaries"],
+            required: ["index", "summary"],
           },
-          maxOutputTokens: 8000,
         },
-      }),
-    });
-    if (!res.ok) return items;
-    const json = await res.json();
-    const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return items;
-    const parsed = JSON.parse(text) as { summaries: SummaryItem[] };
-    return applySummaries(items, parsed.summaries ?? []);
-  } catch {
-    return items;
-  }
+      },
+      required: ["summaries"],
+    },
+  );
+  if (!parsed) return items;
+  return applySummaries(items, parsed.summaries ?? []);
 }
 
 // ---- Anthropic Claude (유료, 선택) ----
@@ -132,7 +111,7 @@ async function callClaude(items: NewsItem[]): Promise<NewsItem[]> {
 }
 
 async function summarize(items: NewsItem[]): Promise<NewsItem[]> {
-  if (process.env.GEMINI_API_KEY) return callGemini(items);
+  if (geminiEnabled()) return callGemini(items);
   if (process.env.ANTHROPIC_API_KEY) return callClaude(items);
   return items;
 }
@@ -152,5 +131,5 @@ export async function summarizeNews(
 }
 
 export function aiSummariesEnabled(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY);
+  return geminiEnabled() || Boolean(process.env.ANTHROPIC_API_KEY);
 }
