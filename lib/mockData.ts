@@ -42,6 +42,7 @@ export interface DiagnosisItem {
   name: string;
   market: Market;
   price: number;
+  change?: number; // 전일 대비 증감액 (Yahoo 포맷)
   changePct: number;
   volume: number;
   volumeRatio: number;

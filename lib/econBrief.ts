@@ -83,7 +83,7 @@ export async function fetchEconBrief(
 ): Promise<EconBrief | null> {
   if (!aiEnabled() || (kr.length === 0 && us.length === 0)) return null;
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => generate(kr, us), ["econ-brief-v1", day], {
+  return unstable_cache(() => generate(kr, us), ["econ-brief-v2", day], {
     revalidate: 86400,
   })();
 }

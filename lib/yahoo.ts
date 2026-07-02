@@ -71,7 +71,7 @@ interface YahooChartResult {
 
 async function fetchChartRaw(
   symbol: string,
-  range = "1mo",
+  range = "1d", // 기본 1일: meta.chartPreviousClose = 전일 종가 → 일간 등락 정확
   interval = "1d",
 ): Promise<YahooChartResult | null> {
   const url = `${BASE}/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
@@ -194,7 +194,7 @@ export async function fetchQuoteMeta(symbol: string): Promise<{
   changePct: number;
   currency: string;
 } | null> {
-  const data = await fetchChartRaw(symbol, "1mo", "1d");
+  const data = await fetchChartRaw(symbol, "1d", "1d");
   if (!data) return null;
   const q = toQuote(symbol, data);
   const currency = (data as unknown as { meta?: { currency?: string } })?.meta?.currency ?? "USD";
@@ -295,9 +295,12 @@ export async function fetchDiagnosis(
   const volumes = volumesRaw.filter((v): v is number => v != null);
   if (closes.length < 15) return null;
 
-  const q = toQuote(symbol, data);
-  const price = q.price || closes[closes.length - 1];
-  const changePct = q.changePct;
+  // 일간 등락 = 현재가 vs 전일 종가(시계열의 직전 일봉 종가)
+  const price = data.meta.regularMarketPrice ?? closes[closes.length - 1];
+  const prevClose =
+    closes.length >= 2 ? closes[closes.length - 2] : data.meta.chartPreviousClose ?? price;
+  const change = price - prevClose;
+  const changePct = prevClose ? (change / prevClose) * 100 : 0;
   const type: "급등" | "급락" = changePct >= 0 ? "급등" : "급락";
 
   const rsiVal = Math.round(rsi(closes) ?? 50);
@@ -314,6 +317,7 @@ export async function fetchDiagnosis(
     name,
     market,
     price,
+    change,
     changePct,
     volume: volumes[volumes.length - 1] ?? 0,
     volumeRatio: volRatio,

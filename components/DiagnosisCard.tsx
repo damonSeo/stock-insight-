@@ -36,9 +36,16 @@ export default function DiagnosisCard({ item }: { item: DiagnosisItem }) {
             {item.market === "KR"
               ? `₩${item.price.toLocaleString("ko-KR")}`
               : `$${item.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
-            <span className={`ml-2 text-sm ${up ? "text-emerald-400" : "text-red-400"}`}>
-              {up ? "▲" : "▼"} {Math.abs(item.changePct).toFixed(2)}%
-            </span>
+          </p>
+          <p className={`text-sm ${up ? "text-emerald-400" : "text-red-400"}`}>
+            {up ? "▲" : "▼"}{" "}
+            {item.change != null
+              ? item.market === "KR"
+                ? Math.abs(item.change).toLocaleString("ko-KR")
+                : Math.abs(item.change).toLocaleString("en-US", { minimumFractionDigits: 2 })
+              : ""}{" "}
+            ({up ? "+" : "-"}
+            {Math.abs(item.changePct).toFixed(2)}%)
           </p>
         </div>
         <div className={`rounded-lg p-2 ${up ? "bg-emerald-900/40 text-emerald-400" : "bg-red-900/40 text-red-400"}`}>

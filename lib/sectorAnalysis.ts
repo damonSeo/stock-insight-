@@ -80,7 +80,7 @@ function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
   const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)); // 7일 버킷
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v5", String(week)], {
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v6", String(week)], {
     revalidate: 7 * 24 * 60 * 60,
   })();
 }

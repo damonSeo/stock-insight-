@@ -181,13 +181,21 @@ export default function WatchlistSection() {
                   </p>
                   {q && (
                     <span
-                      className={`flex items-center gap-1 text-sm ${
+                      className={`flex items-center gap-1 text-right text-sm ${
                         up ? "text-emerald-400" : "text-red-400"
                       }`}
                     >
                       {up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                      {up ? "+" : ""}
-                      {q.changePct.toFixed(2)}%
+                      <span>
+                        {up ? "+" : ""}
+                        {w.market === "KR"
+                          ? Math.round(q.change).toLocaleString("ko-KR")
+                          : q.change.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        <span className="ml-1">
+                          ({up ? "+" : ""}
+                          {q.changePct.toFixed(2)}%)
+                        </span>
+                      </span>
                     </span>
                   )}
                 </div>

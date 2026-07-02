@@ -1,5 +1,6 @@
 import { fetchAllMovers } from "@/lib/yahoo";
 import MoversClient from "@/components/MoversClient";
+import LiveIndicator from "@/components/LiveIndicator";
 
 export const revalidate = 60;
 
@@ -8,11 +9,14 @@ export default async function MoversPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-black text-white">급등 · 급락 진단</h1>
-        <p className="mt-1 text-slate-400">
-          실시간 시세 기반 기술적 지표 진단 · RSI · MACD · 볼린저 밴드 · 거래량
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-black text-white">급등 · 급락 진단</h1>
+          <p className="mt-1 text-slate-400">
+            등락률은 <span className="text-slate-200">전일 종가 대비</span> 기준 · RSI · MACD · 볼린저 · 거래량
+          </p>
+        </div>
+        <LiveIndicator />
       </div>
 
       <MoversClient gainers={gainers} losers={losers} />

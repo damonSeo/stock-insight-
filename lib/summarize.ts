@@ -137,7 +137,7 @@ export async function summarizeNews(
   // 버전 접두어(v4) — 모델/프롬프트 변경 시 올려서 캐시 무효화
   const cached = unstable_cache(
     () => summarizeToMap(items),
-    ["news-summary-v5", market, String(bucket)],
+    ["news-summary-v6", market, String(bucket)],
     { revalidate: BUCKET_MS / 1000 },
   );
   const map = await cached();

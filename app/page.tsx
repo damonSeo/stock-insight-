@@ -4,8 +4,9 @@ import IndexCard from "@/components/IndexCard";
 import DiagnosisCard from "@/components/DiagnosisCard";
 import FutureValueCard from "@/components/FutureValueCard";
 import WatchlistSection from "@/components/WatchlistSection";
+import LiveIndicator from "@/components/LiveIndicator";
 import Link from "next/link";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default async function Dashboard() {
   const today = new Date().toLocaleDateString("ko-KR", {
@@ -27,10 +28,7 @@ export default async function Dashboard() {
           <h1 className="text-3xl font-black text-white">시장 대시보드</h1>
           <p className="mt-1 text-slate-400">{today} · 미국 & 한국 주식 종합 분석</p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-400">
-          <RefreshCw size={12} className="animate-spin" />
-          실시간 데이터 업데이트 중
-        </div>
+        <LiveIndicator />
       </div>
 
       <section>
