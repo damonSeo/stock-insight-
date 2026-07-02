@@ -1,4 +1,4 @@
-import { Sparkles, ArrowRightLeft, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowRightLeft, CheckCircle2, Flame } from "lucide-react";
 import type { EconBrief, Verdict } from "@/lib/econBrief";
 
 const verdictStyle: Record<Verdict, { box: string; badge: string; label: string }> = {
@@ -30,17 +30,19 @@ function KeyPoints({
 }) {
   return (
     <div className="rounded-xl border border-slate-700/50 bg-slate-900/80 p-4">
-      <p className="mb-2 font-bold text-white">
-        {flag} {title}
+      <p className="mb-3 font-bold text-white">
+        {flag} {title} <span className="text-xs text-slate-500">핵심 5</span>
       </p>
-      <ul className="space-y-2">
+      <ol className="space-y-3">
         {points.map((p, i) => (
-          <li key={i} className="flex gap-2 text-sm text-slate-300">
-            <span className="mt-0.5 text-blue-400">•</span>
-            <span className="leading-relaxed">{p}</span>
+          <li key={i} className="flex gap-3">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-blue-400">
+              {i + 1}
+            </span>
+            <span className="text-sm leading-relaxed text-slate-300">{p}</span>
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   );
 }
@@ -66,9 +68,30 @@ export default function EconBriefCard({ brief }: { brief: EconBrief }) {
 
       {/* 미국 / 한국 키포인트 */}
       <div className="grid gap-4 md:grid-cols-2">
-        <KeyPoints flag="🇺🇸" title="미국 경제 키포인트" points={brief.us} />
-        <KeyPoints flag="🇰🇷" title="한국 경제 키포인트" points={brief.kr} />
+        <KeyPoints flag="🇺🇸" title="미국 경제" points={brief.us} />
+        <KeyPoints flag="🇰🇷" title="한국 경제" points={brief.kr} />
       </div>
+
+      {/* 한국 가십·핫이슈 */}
+      {brief.krHotIssues.length > 0 && (
+        <div className="rounded-xl border border-orange-800/40 bg-orange-950/20 p-4">
+          <p className="mb-3 flex items-center gap-1.5 font-bold text-white">
+            <Flame size={16} className="text-orange-400" />
+            🇰🇷 한국 경제 가십 · 핫이슈
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {brief.krHotIssues.map((issue, i) => (
+              <div
+                key={i}
+                className="flex gap-2 rounded-lg bg-slate-900/60 p-3 text-sm text-slate-300"
+              >
+                <span className="text-orange-400">🔥</span>
+                <span className="leading-relaxed">{issue}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 결합 분석 (시너지/리스크) */}
       <div className={`rounded-xl border p-5 ${v.box}`}>
