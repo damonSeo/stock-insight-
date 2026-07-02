@@ -11,7 +11,7 @@ export default async function FuturePage() {
   const symbols = futureValueStocks.map((s) =>
     s.market === "KR" ? krSymbol(s.symbol) : s.symbol,
   );
-  const [sectors, quotes] = await Promise.all([
+  const [sectorData, quotes] = await Promise.all([
     fetchSectorTrends(),
     fetchQuotes(symbols),
   ]);
@@ -32,7 +32,7 @@ export default async function FuturePage() {
         </p>
       </div>
 
-      <SectorTrends sectors={sectors} />
+      <SectorTrends sectors={sectorData.sectors} updatedAt={sectorData.updatedAt} />
 
       <section className="space-y-4">
         <h2 className="text-lg font-bold text-white">📌 종목별 심층 분석</h2>

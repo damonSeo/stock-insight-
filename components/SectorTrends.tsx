@@ -8,8 +8,21 @@ const outlookStyle: Record<string, string> = {
   부정: "bg-red-900/50 text-red-300 border-red-800",
 };
 
-export default function SectorTrends({ sectors }: { sectors: SectorTrend[] }) {
+export default function SectorTrends({
+  sectors,
+  updatedAt,
+}: {
+  sectors: SectorTrend[];
+  updatedAt?: string | null;
+}) {
   const anyAi = sectors.some((s) => s.ai);
+  const updatedLabel = updatedAt
+    ? new Date(updatedAt).toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <section className="space-y-4">
@@ -17,10 +30,13 @@ export default function SectorTrends({ sectors }: { sectors: SectorTrend[] }) {
         <h2 className="text-lg font-bold text-white">🔥 미래 먹거리 섹터 트렌드</h2>
         {anyAi && (
           <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/50 px-2 py-0.5 text-xs font-semibold text-purple-300">
-            <Sparkles size={11} /> AI 분석
+            <Sparkles size={11} /> AI 분석 · 주간
           </span>
         )}
         <span className="text-xs text-slate-500">· 실시간 섹터 모멘텀 순</span>
+        {updatedLabel && (
+          <span className="text-xs text-slate-500">· AI 분석 업데이트: {updatedLabel}</span>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

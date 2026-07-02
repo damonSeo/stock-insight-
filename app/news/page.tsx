@@ -1,6 +1,8 @@
 import { fetchNews } from "@/lib/news";
-import { summarizeNews, aiSummariesEnabled } from "@/lib/summarize";
+import { summarizeNews } from "@/lib/summarize";
+import { fetchEconBrief } from "@/lib/econBrief";
 import NewsClient from "@/components/NewsClient";
+import EconBriefCard from "@/components/EconBrief";
 
 export const revalidate = 600;
 
@@ -10,18 +12,23 @@ export default async function NewsPage() {
     summarizeNews(krRaw, "KR"),
     summarizeNews(usRaw, "US"),
   ]);
-  const ai = aiSummariesEnabled();
+  const brief = await fetchEconBrief(kr, us);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+    <main className="mx-auto max-w-7xl px-4 py-8 space-y-10">
       <div>
         <h1 className="text-3xl font-black text-white">경제 뉴스 · 이슈</h1>
         <p className="mt-1 text-slate-400">
-          한국 · 미국 경제 주요 뉴스 {ai ? "AI 핵심 요약" : "핵심 요약"} · 10분마다 갱신
+          오늘의 한·미 경제 키포인트와 결합 시너지 분석 · 관련 원문 뉴스
         </p>
       </div>
 
-      <NewsClient kr={kr} us={us} />
+      {brief && <EconBriefCard brief={brief} />}
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-bold text-white">📰 관련 원문 뉴스</h2>
+        <NewsClient kr={kr} us={us} />
+      </section>
     </main>
   );
 }

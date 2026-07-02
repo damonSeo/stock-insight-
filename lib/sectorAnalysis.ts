@@ -34,9 +34,14 @@ interface AiTrend {
 const AI_SYSTEM =
   "당신은 한국의 증권 섹터 애널리스트입니다. 각 미래 성장 섹터의 최근 트렌드를 담백하게 분석합니다. 과장·투자권유 없이 구조적 성장 동력과 최근 흐름 중심으로. 각 항목의 id를 그대로 사용하세요.";
 
+interface AiTrendsResult {
+  trends: AiTrend[];
+  updatedAt: string; // 분석 생성 시각 (주간 캐시)
+}
+
 async function callAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
-): Promise<AiTrend[] | null> {
+): Promise<AiTrendsResult | null> {
   if (!aiEnabled() || input.length === 0) return null;
   const today = new Date().toISOString().slice(0, 10);
   const list = input
@@ -66,21 +71,27 @@ async function callAiTrends(
     required: ["trends"],
   };
   const out = await aiJSON<{ trends: AiTrend[] }>(AI_SYSTEM, user, schema, 4000);
-  return out?.trends ?? null;
+  if (!out?.trends) return null;
+  return { trends: out.trends, updatedAt: new Date().toISOString() };
 }
 
-// AI 트렌드는 하루 1회만 갱신 (섹터 트렌드는 분 단위로 안 바뀜)
+// AI 트렌드는 주 1회 갱신 (미래 먹거리 트렌드는 분/일 단위로 안 바뀜)
 function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
-  const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v4", day], {
-    revalidate: 21600,
+  const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)); // 7일 버킷
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v5", String(week)], {
+    revalidate: 7 * 24 * 60 * 60,
   })();
 }
 
+export interface SectorTrendsResult {
+  sectors: SectorTrend[];
+  updatedAt: string | null; // AI 분석 업데이트 시각 (주간)
+}
+
 /** 섹터별 실시세 모멘텀 + AI 트렌드 → 핫한 순으로 정렬 */
-export async function fetchSectorTrends(): Promise<SectorTrend[]> {
+export async function fetchSectorTrends(): Promise<SectorTrendsResult> {
   const symbols = HOT_SECTORS.flatMap((s) => s.stocks.map((x) => x.symbol));
   const quotes = await fetchQuotes(symbols); // fetchQuotes 자체 60초 캐시
 
@@ -99,7 +110,7 @@ export async function fetchSectorTrends(): Promise<SectorTrend[]> {
     return { sec, stocks, avg };
   });
 
-  const ai = await getCachedAiTrends(
+  const aiRes = await getCachedAiTrends(
     base.map((b) => ({
       id: b.sec.id,
       name: b.sec.name,
@@ -110,7 +121,7 @@ export async function fetchSectorTrends(): Promise<SectorTrend[]> {
         .join(", "),
     })),
   );
-  const aiMap = new Map((ai ?? []).map((a) => [a.id, a]));
+  const aiMap = new Map((aiRes?.trends ?? []).map((a) => [a.id, a]));
 
   const heuristic = (avg: number): "긍정" | "중립" | "부정" =>
     avg >= 1 ? "긍정" : avg <= -1 ? "부정" : "중립";
@@ -138,5 +149,5 @@ export async function fetchSectorTrends(): Promise<SectorTrend[]> {
 
   // 핫한 순위 = 섹터 평균 등락률 내림차순
   result.sort((x, y) => y.avgChangePct - x.avgChangePct);
-  return result;
+  return { sectors: result, updatedAt: aiRes?.updatedAt ?? null };
 }
