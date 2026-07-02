@@ -50,7 +50,12 @@ async function callAiTrends(
         `- id:${s.id} | 섹터:${s.name} | 테마:${s.theme} | 최근 평균등락:${s.avg.toFixed(1)}% | 구성종목:${s.stocks}`,
     )
     .join("\n");
-  const user = `오늘(${today}) 기준 아래 미래 먹거리 성장 섹터들의 현재 트렌드를 분석해줘. 각 섹터마다 trend(2~3문장, 지금 왜 주목받는지/최근 흐름), drivers(핵심 성장 동력 2~3개, 각 8자 내외로 짧게), outlook(긍정/중립/부정 중 하나)을 JSON으로.\n\n${list}`;
+  const user = `오늘(${today}) 기준 아래 미래 먹거리 성장 섹터들의 현재 트렌드를 분석해줘. 각 섹터마다 trend(2~3문장, 지금 왜 주목받는지/최근 흐름), drivers(핵심 성장 동력 2~3개, 각 8자 내외로 짧게), outlook(긍정/중립/부정 중 하나).
+
+반드시 아래 JSON 형식으로만, 키 이름 그대로 응답해(각 섹터의 id를 그대로 사용):
+{"trends":[{"id":"섹터id","trend":"문장","drivers":["짧게","짧게"],"outlook":"긍정"}]}
+
+${list}`;
   const schema = {
     type: "OBJECT",
     properties: {
@@ -80,7 +85,7 @@ function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
   const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)); // 7일 버킷
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v6", String(week)], {
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v7", String(week)], {
     revalidate: 7 * 24 * 60 * 60,
   })();
 }

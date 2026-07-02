@@ -40,6 +40,9 @@ async function generate(kr: NewsItem[], us: NewsItem[]): Promise<EconBrief | nul
 - analysis: 왜 그렇게 판단했는지 2~4문장. 한·미 상호작용/전이 경로(환율·금리·수출·증시 등) 중심
 - watchPoints: 앞으로 검증·주의해야 할 포인트 2~3개 (각 짧게)
 
+반드시 아래 JSON 형식으로만, 키 이름 그대로 응답해:
+{"us":["문장","문장","문장"],"kr":["문장","문장","문장"],"verdict":"시너지","analysis":"문장들","watchPoints":["짧게","짧게"]}
+
 [미국 경제 뉴스]
 ${newsBlock(us)}
 
@@ -83,7 +86,7 @@ export async function fetchEconBrief(
 ): Promise<EconBrief | null> {
   if (!aiEnabled() || (kr.length === 0 && us.length === 0)) return null;
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => generate(kr, us), ["econ-brief-v2", day], {
+  return unstable_cache(() => generate(kr, us), ["econ-brief-v3", day], {
     revalidate: 86400,
   })();
 }
