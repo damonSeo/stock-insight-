@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { fetchQuotes } from "@/lib/yahoo";
 import { HOT_SECTORS } from "@/lib/sectors";
-import { geminiJSON, geminiEnabled } from "@/lib/gemini";
+import { aiJSON, aiEnabled } from "@/lib/ai";
 
 export interface SectorStockQuote {
   symbol: string;
@@ -37,7 +37,7 @@ const AI_SYSTEM =
 async function callAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ): Promise<AiTrend[] | null> {
-  if (!geminiEnabled() || input.length === 0) return null;
+  if (!aiEnabled() || input.length === 0) return null;
   const today = new Date().toISOString().slice(0, 10);
   const list = input
     .map(
@@ -65,7 +65,7 @@ async function callAiTrends(
     },
     required: ["trends"],
   };
-  const out = await geminiJSON<{ trends: AiTrend[] }>(AI_SYSTEM, user, schema, 4000);
+  const out = await aiJSON<{ trends: AiTrend[] }>(AI_SYSTEM, user, schema, 4000);
   return out?.trends ?? null;
 }
 
@@ -74,7 +74,7 @@ function getCachedAiTrends(
   input: { id: string; name: string; theme: string; avg: number; stocks: string }[],
 ) {
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v3", day], {
+  return unstable_cache(() => callAiTrends(input), ["sector-ai-trends-v4", day], {
     revalidate: 21600,
   })();
 }

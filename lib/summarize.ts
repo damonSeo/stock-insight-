@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type { NewsItem } from "@/lib/news";
-import { geminiJSON, geminiEnabled } from "@/lib/gemini";
+import { aiJSON, aiEnabled } from "@/lib/ai";
 
 /**
  * 경제 뉴스 AI 요약 — 무료 우선.
@@ -38,7 +38,7 @@ function applySummaries(items: NewsItem[], summaries: SummaryItem[]): NewsItem[]
 // ---- Google Gemini (무료) ----
 async function callGemini(items: NewsItem[]): Promise<NewsItem[]> {
   const targets = items.slice(0, SUMMARIZE_COUNT);
-  const parsed = await geminiJSON<{ summaries: SummaryItem[] }>(
+  const parsed = await aiJSON<{ summaries: SummaryItem[] }>(
     SYSTEM_PROMPT,
     buildPrompt(targets),
     {
@@ -111,7 +111,7 @@ async function callClaude(items: NewsItem[]): Promise<NewsItem[]> {
 }
 
 async function summarize(items: NewsItem[]): Promise<NewsItem[]> {
-  if (geminiEnabled()) return callGemini(items);
+  if (aiEnabled()) return callGemini(items);
   if (process.env.ANTHROPIC_API_KEY) return callClaude(items);
   return items;
 }
@@ -137,7 +137,7 @@ export async function summarizeNews(
   // 버전 접두어(v4) — 모델/프롬프트 변경 시 올려서 캐시 무효화
   const cached = unstable_cache(
     () => summarizeToMap(items),
-    ["news-summary-v4", market, String(bucket)],
+    ["news-summary-v5", market, String(bucket)],
     { revalidate: BUCKET_MS / 1000 },
   );
   const map = await cached();
@@ -145,5 +145,5 @@ export async function summarizeNews(
 }
 
 export function aiSummariesEnabled(): boolean {
-  return geminiEnabled() || Boolean(process.env.ANTHROPIC_API_KEY);
+  return aiEnabled() || Boolean(process.env.ANTHROPIC_API_KEY);
 }
