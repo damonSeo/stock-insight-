@@ -8,7 +8,7 @@ import type { NewsItem } from "@/lib/news";
  * - unstable_cache로 30분 캐시 → 페이지 재검증마다 호출되지 않음.
  */
 
-const SUMMARIZE_COUNT = 15; // 상위 N개만 AI 요약 (나머지는 리드문 유지)
+const SUMMARIZE_COUNT = 24; // 전체 기사 AI 요약 (무료 티어로 충분)
 const GEMINI_MODEL = "gemini-2.5-flash"; // 무료 티어 (2.0-flash는 일부 키에서 무료 한도 0)
 const CLAUDE_MODEL = "claude-opus-4-8";
 
@@ -145,7 +145,7 @@ export async function summarizeNews(
   if (!aiSummariesEnabled() || items.length === 0) return items;
   const cacheKey = items.map((i) => i.link).join("|");
   // 버전 접두어 — 모델/프롬프트 변경 시 값만 올리면 기존 캐시 즉시 무효화
-  const cached = unstable_cache(() => summarize(items), ["news-summary-v2", market, cacheKey], {
+  const cached = unstable_cache(() => summarize(items), ["news-summary-v3", market, cacheKey], {
     revalidate: 1800,
   });
   return cached();
