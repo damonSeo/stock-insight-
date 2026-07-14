@@ -1,10 +1,11 @@
 /**
  * 경제 뉴스 — RSS 피드 기반 (API 키 불필요, 서버에서 조회).
- * 한국: 연합뉴스 경제 + SBS 경제 / 미국: CNBC 경제 + MarketWatch.
+ * 한국: 연합뉴스 경제 + SBS 경제
+ * 미국: CNBC 경제 + CNBC Top News(정책·빅테크 등 폭넓은 비즈니스 뉴스) + MarketWatch
+ *       + 연준(Fed) 공식 보도자료(통화정책·FOMC 등 — 헤드라인 신호 위주, 정부 1차 소스)
  *
  * 요약(summary)은 각 기사 RSS description의 리드 텍스트를 정제한 것.
- * 카드에서 5줄로 클램프해 "핵심 요약" 느낌을 준다. (정밀 5줄 AI 요약이 필요하면
- * Claude API 연동으로 고도화 — 별도 API 키/비용 필요)
+ * 카드에서 5줄로 클램프해 "핵심 요약" 느낌을 준다. (정밀 5줄 AI 요약은 lib/summarize.ts)
  */
 
 export type NewsMarket = "KR" | "US";
@@ -38,8 +39,16 @@ const FEEDS: Record<NewsMarket, FeedConfig[]> = {
       url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258",
     },
     {
+      source: "CNBC",
+      url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+    },
+    {
       source: "MarketWatch",
       url: "http://feeds.marketwatch.com/marketwatch/topstories/",
+    },
+    {
+      source: "Fed",
+      url: "https://www.federalreserve.gov/feeds/press_all.xml",
     },
   ],
 };
@@ -104,7 +113,9 @@ function parseFeed(xml: string, source: string): NewsItem[] {
     if (!title || !link) continue;
     const desc = pick(block, "description") || pick(block, "content:encoded");
     const summary = stripHtml(desc);
-    const pubRaw = pick(block, "pubDate") || pick(block, "dc:date");
+    // 일부 피드(Fed 등)는 pubDate도 CDATA로 감싸므로 벗겨내고 파싱해야 한다.
+    // 안 벗기면 Date 파싱 실패 → "지금"으로 폴백돼 정렬 순서가 왜곡된다.
+    const pubRaw = decodeEntities(pick(block, "pubDate") || pick(block, "dc:date"));
     const d = pubRaw ? new Date(pubRaw) : new Date();
     items.push({
       title,

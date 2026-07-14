@@ -16,6 +16,7 @@ const sourceColor: Record<string, string> = {
   SBS: "bg-amber-900/50 text-amber-300",
   CNBC: "bg-purple-900/50 text-purple-300",
   MarketWatch: "bg-emerald-900/50 text-emerald-300",
+  Fed: "bg-red-900/50 text-red-300",
 };
 
 function NewsCard({ item, flag }: { item: NewsItem; flag: string }) {
