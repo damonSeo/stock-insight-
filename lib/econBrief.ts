@@ -72,7 +72,10 @@ ${krList}`;
   };
 
   const out = await aiJSON<Omit<EconBrief, "date" | "updatedAt">>(SYSTEM, user, schema, 8000);
-  if (!out) return null;
+  // AI 실패는 여기서 throw한다 — unstable_cache는 정상 반환값만 캐시하고,
+  // 예외가 나면 캐시에 쓰지 않으므로 다음 요청에서 재시도된다.
+  // (여기서 null을 반환하면 그 null이 하루 종일 캐시돼 브리핑이 통째로 사라진다.)
+  if (!out) throw new Error("econ brief: AI 호출 실패");
   const verdict: Verdict = (["시너지", "혼조", "리스크"] as const).includes(
     out.verdict as Verdict,
   )
@@ -97,7 +100,12 @@ export async function fetchEconBrief(
 ): Promise<EconBrief | null> {
   if (!aiEnabled() || (kr.length === 0 && us.length === 0)) return null;
   const day = new Date().toISOString().slice(0, 10);
-  return unstable_cache(() => generate(kr, us), ["econ-brief-v5", day], {
-    revalidate: 86400,
-  })();
+  try {
+    return await unstable_cache(() => generate(kr, us), ["econ-brief-v6", day], {
+      revalidate: 86400,
+    })();
+  } catch {
+    // 실패는 캐시되지 않으므로 다음 요청(또는 다음 리밸리데이트)에서 재시도된다.
+    return null;
+  }
 }
