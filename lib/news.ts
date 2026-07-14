@@ -98,7 +98,7 @@ function extractImage(block: string): string | undefined {
   return undefined;
 }
 
-function parseFeed(xml: string, source: string): NewsItem[] {
+export function parseFeed(xml: string, source: string): NewsItem[] {
   const items: NewsItem[] = [];
   const blocks = xml.split(/<item[\s>]/i).slice(1);
   for (const raw of blocks) {
@@ -156,4 +156,25 @@ export async function fetchNews(market: NewsMarket, limit = 24): Promise<NewsIte
   });
   unique.sort((a, b) => +new Date(b.pubDate) - +new Date(a.pubDate));
   return unique.slice(0, limit);
+}
+
+/**
+ * 종목별 관련 뉴스 (Yahoo Finance 레거시 헤드라인 RSS).
+ * 완벽히 그 종목만 다루진 않지만(관련 섹터·경쟁사 기사 일부 포함) 실사용에 충분히 관련성 있음.
+ * symbol은 Yahoo 형식(.KS/.KQ 포함) 그대로 넘겨야 한다 — 접미사 없으면 일반 피드로 폴백됨.
+ */
+export async function fetchStockNews(symbol: string, limit = 8): Promise<NewsItem[]> {
+  const url = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(symbol)}&region=US&lang=en-US`;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      next: { revalidate: REVALIDATE_SECONDS },
+    });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const items = parseFeed(xml, "Yahoo Finance");
+    return items.slice(0, limit);
+  } catch {
+    return [];
+  }
 }

@@ -193,12 +193,21 @@ export async function fetchQuoteMeta(symbol: string): Promise<{
   change: number;
   changePct: number;
   currency: string;
+  name: string;
 } | null> {
   const data = await fetchChartRaw(symbol, "1d", "1d");
   if (!data) return null;
   const q = toQuote(symbol, data);
-  const currency = (data as unknown as { meta?: { currency?: string } })?.meta?.currency ?? "USD";
-  return { price: q.price, change: q.change, changePct: q.changePct, currency };
+  const meta = (data as unknown as {
+    meta?: { currency?: string; longName?: string; shortName?: string };
+  })?.meta;
+  return {
+    price: q.price,
+    change: q.change,
+    changePct: q.changePct,
+    currency: meta?.currency ?? "USD",
+    name: meta?.longName ?? meta?.shortName ?? symbol,
+  };
 }
 
 export interface SearchResult {
@@ -314,6 +323,7 @@ export async function fetchDiagnosis(
 
   return {
     symbol: symbol.replace(/\.(KS|KQ)$/, ""),
+    ySymbol: symbol,
     name,
     market,
     price,

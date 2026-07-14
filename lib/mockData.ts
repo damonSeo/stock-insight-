@@ -39,6 +39,7 @@ export interface FutureValueStock {
 
 export interface DiagnosisItem {
   symbol: string;
+  ySymbol?: string; // 상세페이지 라우팅용 Yahoo 심볼(.KS/.KQ 포함) — 표시용 symbol과 다를 수 있음
   name: string;
   market: Market;
   price: number;

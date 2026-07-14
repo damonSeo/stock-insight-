@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { fetchCandles, fetchQuoteMeta } from "@/lib/yahoo";
+import { fetchStockNews } from "@/lib/news";
 import { rsiSeries, macdSeries } from "@/lib/indicators";
 import CandleChart from "@/components/CandleChart";
 import IndicatorCharts, { type IndicatorPoint } from "@/components/IndicatorCharts";
 import WatchlistStar from "@/components/WatchlistStar";
+import StockNews from "@/components/StockNews";
 
 export const revalidate = 60;
 
@@ -17,9 +19,10 @@ export default async function StockPage({
   const symbol = decodeURIComponent(rawSymbol);
   const market: "KR" | "US" = /\.(KS|KQ)$/.test(symbol) ? "KR" : "US";
 
-  const [candles, meta] = await Promise.all([
+  const [candles, meta, news] = await Promise.all([
     fetchCandles(symbol, "6mo"),
     fetchQuoteMeta(symbol),
+    fetchStockNews(symbol),
   ]);
 
   const closes = candles.map((c) => c.close);
@@ -53,11 +56,12 @@ export default async function StockPage({
         <div>
           <div className="flex items-center gap-2">
             <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-xs text-slate-400">
-              {market === "KR" ? "🇰🇷" : "🇺🇸"} {symbol}
+              {market === "KR" ? "🇰🇷" : "🇺🇸"} {symbol.replace(/\.(KS|KQ)$/, "")}
             </span>
           </div>
+          <p className="mt-1 text-xl font-bold text-white">{meta?.name ?? symbol}</p>
           {candles.length > 0 ? (
-            <p className="mt-2 font-mono text-3xl font-black text-white">
+            <p className="mt-1 font-mono text-3xl font-black text-white">
               {priceStr}
               {meta && (
                 <span className={`ml-3 text-lg ${up ? "text-emerald-400" : "text-red-400"}`}>
@@ -70,7 +74,7 @@ export default async function StockPage({
             <p className="mt-2 text-slate-400">시세 데이터를 불러올 수 없습니다.</p>
           )}
         </div>
-        <WatchlistStar item={{ symbol, name: symbol, market }} size={24} />
+        <WatchlistStar item={{ symbol, name: meta?.name ?? symbol, market }} size={24} />
       </div>
 
       {candles.length > 0 && (
@@ -83,6 +87,8 @@ export default async function StockPage({
           <IndicatorCharts data={indData} />
         </>
       )}
+
+      <StockNews news={news} />
 
       <p className="text-center text-xs text-slate-600">
         ⚠️ 본 정보는 투자 참고용이며 투자 권유가 아닙니다.
